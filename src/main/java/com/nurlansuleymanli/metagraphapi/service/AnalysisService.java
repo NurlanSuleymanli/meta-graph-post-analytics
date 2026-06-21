@@ -6,7 +6,6 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
@@ -15,10 +14,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-@FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AnalysisService {
 
-    public AnalysisDto analyzePosts(List<PostDto> posts){
+    public AnalysisDto analyzePosts(List<PostDto> posts) {
 
         posts.forEach(post ->
                 post.setEngagement(
@@ -31,7 +30,6 @@ public class AnalysisService {
                 .limit(3)
                 .toList();
 
-
         Map<String, Integer> likesByDay = posts.stream()
                 .collect(Collectors.groupingBy(postDto -> {
                             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
@@ -39,17 +37,42 @@ public class AnalysisService {
                             return date.getDayOfWeek().toString();
                         },
                         Collectors.summingInt(PostDto::getLikeCount)
-                        ));
+                ));
+
+        String summary = buildSummary(posts, topPosts, likesByDay);
 
         return AnalysisDto.builder()
                 .likesByDay(likesByDay)
                 .topEngagementPosts(topPosts)
-                .summary("The last 20 posts were analyzed and the 3 posts that received the most likes" +
-                        " and comments and the number of likes of the posts by day of the week were presented to you." +
-                        "These analyses were conducted based on the number of comments and likes.")
+                .summary(summary)
                 .build();
-
     }
 
+    private String buildSummary(List<PostDto> posts,
+                                List<PostDto> topPosts,
+                                Map<String, Integer> likesByDay) {
+
+        int totalPosts = posts.size();
+
+        double avgEngagement = posts.stream()
+                .mapToInt(PostDto::getEngagement)
+                .average()
+                .orElse(0);
+
+        int topEngagement = topPosts.isEmpty() ? 0 : topPosts.getFirst().getEngagement();
+
+        String bestDay = likesByDay.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse("unknown");
+
+        int bestDayLikes = likesByDay.getOrDefault(bestDay, 0);
+
+        return "Analyzed " + totalPosts + " posts. " +
+                "Average engagement per post: " + (int) avgEngagement + " (likes + comments). " +
+                "Best performing day: " + bestDay + " with " + bestDayLikes + " total likes. " +
+                "Top post reached " + topEngagement + " engagements. " +
+                "Focus on posting on " + bestDay + " for maximum reach.";
+    }
 
 }
