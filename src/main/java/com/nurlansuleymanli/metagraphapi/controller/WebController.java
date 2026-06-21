@@ -29,8 +29,6 @@ public class WebController {
             model.addAttribute("analysis", analysis);
             model.addAttribute("posts", posts);
 
-            model.addAttribute("errorMessage", "Error fetching data from Meta API: " + e.getMessage());
-
         return "index";
     }
 }
