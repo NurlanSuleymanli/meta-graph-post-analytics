@@ -13,7 +13,7 @@ public interface MetaGraphClient {
 
     @GetMapping("/{userId}/media")
     public MetaResponseDto getPosts(@PathVariable Long userId,
-                                    @RequestParam String field,
+                                    @RequestParam String fields,
                                     @RequestParam int limit,
                                     @RequestParam("access_token") String token);
 }
