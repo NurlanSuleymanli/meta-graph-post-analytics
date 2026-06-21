@@ -10,6 +10,6 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MetaResponseDto {
 
-    List<PostDto> posts;
+    List<PostDto> data;
 
 }
