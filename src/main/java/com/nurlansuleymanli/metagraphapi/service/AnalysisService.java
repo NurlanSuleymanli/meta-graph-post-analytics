@@ -57,6 +57,7 @@ public class AnalysisService {
         return AnalysisDto.builder()
                 .likesByDay(likesByDay)
                 .topEngagementPosts(topPosts)
+                .likesByHour(likesByHour)
                 .summary(summary)
                 .build();
     }
