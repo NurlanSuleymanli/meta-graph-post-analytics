@@ -7,6 +7,8 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +34,8 @@ public class AnalysisService {
 
         Map<String, Integer> likesByDay = posts.stream()
                 .collect(Collectors.groupingBy(postDto -> {
-                            LocalDateTime date = LocalDateTime.parse(postDto.getTimestamp());
+                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
+                            OffsetDateTime date = OffsetDateTime.parse(postDto.getTimestamp(), formatter);
                             return date.getDayOfWeek().toString();
                         },
                         Collectors.summingInt(PostDto::getLikeCount)
