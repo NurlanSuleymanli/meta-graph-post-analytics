@@ -293,6 +293,32 @@
             margin-top: 10px;
         }
 
+        /* Hour Chart Full Row */
+        .card-full {
+            grid-column: 1 / -1;
+        }
+
+        .chart-container-large {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            margin-top: 10px;
+        }
+
+        .hour-peak-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(138, 43, 226, 0.12);
+            border: 1px solid rgba(138, 43, 226, 0.25);
+            color: #c084fc;
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-left: 12px;
+        }
+
         /* Animations */
         @keyframes fadeInDown {
             from {
@@ -408,6 +434,17 @@
                 </div>
             </div>
 
+            <!-- Full Width: Likes by Hour Chart -->
+            <div class="card card-full">
+                <h2 class="section-title">
+                    <span class="emoji">🕐</span> Likes by Hour of Day
+                    <span class="hour-peak-badge" id="peakHourBadge">⚡ Peak Hour: —</span>
+                </h2>
+                <div class="chart-container-large">
+                    <canvas id="likesHourChart"></canvas>
+                </div>
+            </div>
+
         </div>
 
     </div>
@@ -415,21 +452,20 @@
     <!-- Thymeleaf inline block to pass map to JavaScript safely -->
     <script th:inline="javascript" th:if="${analysis}">
         /*<![CDATA[*/
-        const likesByDayMap = /*[[${analysis.likesByDay}]]*/ {};
-        
-        // Prepare chart labels and values
-        const labels = Object.keys(likesByDayMap);
-        const dataValues = Object.values(likesByDayMap);
 
-        // Chart.js Configuration
-        const ctx = document.getElementById('likesChart').getContext('2d');
-        new Chart(ctx, {
+        // ── Likes by Day Chart ───────────────────────────────────────────
+        const likesByDayMap = /*[[${analysis.likesByDay}]]*/ {};
+        const dayLabels     = Object.keys(likesByDayMap);
+        const dayValues     = Object.values(likesByDayMap);
+
+        const ctxDay = document.getElementById('likesChart').getContext('2d');
+        new Chart(ctxDay, {
             type: 'bar',
             data: {
-                labels: labels,
+                labels: dayLabels,
                 datasets: [{
                     label: 'Total Likes',
-                    data: dataValues,
+                    data: dayValues,
                     backgroundColor: 'rgba(138, 43, 226, 0.65)',
                     borderColor: '#8a2be2',
                     borderWidth: 1.5,
@@ -443,9 +479,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: false
-                    },
+                    legend: { display: false },
                     tooltip: {
                         backgroundColor: '#12131a',
                         titleColor: '#f3f4f6',
@@ -459,33 +493,92 @@
                 },
                 scales: {
                     x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            color: '#9ca3af',
-                            font: {
-                                family: 'Plus Jakarta Sans',
-                                size: 11
-                            }
-                        }
+                        grid: { display: false },
+                        ticks: { color: '#9ca3af', font: { family: 'Plus Jakarta Sans', size: 11 } }
                     },
                     y: {
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)'
-                        },
-                        ticks: {
-                            color: '#9ca3af',
-                            font: {
-                                family: 'Plus Jakarta Sans',
-                                size: 11
-                            },
-                            precision: 0
-                        }
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#9ca3af', font: { family: 'Plus Jakarta Sans', size: 11 }, precision: 0 }
                     }
                 }
             }
         });
+
+        // ── Likes by Hour Chart ──────────────────────────────────────────
+        const likesByHourMap = /*[[${analysis.likesByHour}]]*/ {};
+
+        // Build full 0-23 hour axis even if some hours have no data
+        const hourLabels = Array.from({length: 24}, (_, i) => i + ':00');
+        const hourValues = Array.from({length: 24}, (_, i) => likesByHourMap[i] || 0);
+
+        // Find peak hour for badge
+        const peakIdx   = hourValues.indexOf(Math.max(...hourValues));
+        const peakLabel = hourLabels[peakIdx];
+        document.getElementById('peakHourBadge').textContent = '⚡ Peak Hour: ' + peakLabel;
+
+        const ctxHour = document.getElementById('likesHourChart').getContext('2d');
+
+        // Gradient fill
+        const gradient = ctxHour.createLinearGradient(0, 0, 0, 280);
+        gradient.addColorStop(0,   'rgba(138, 43, 226, 0.45)');
+        gradient.addColorStop(1,   'rgba(138, 43, 226, 0.0)');
+
+        new Chart(ctxHour, {
+            type: 'line',
+            data: {
+                labels: hourLabels,
+                datasets: [{
+                    label: 'Likes',
+                    data: hourValues,
+                    fill: true,
+                    backgroundColor: gradient,
+                    borderColor: '#8a2be2',
+                    borderWidth: 2.5,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#da1b60',
+                    pointBorderColor: '#0a0b10',
+                    pointBorderWidth: 2,
+                    pointHoverRadius: 7,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#12131a',
+                        titleColor: '#f3f4f6',
+                        bodyColor: '#9ca3af',
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 10,
+                        displayColors: false,
+                        callbacks: {
+                            title: (items) => 'Hour: ' + items[0].label,
+                            label: (item)  => 'Likes: ' + item.raw
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.03)' },
+                        ticks: {
+                            color: '#9ca3af',
+                            font: { family: 'Plus Jakarta Sans', size: 10 },
+                            maxTicksLimit: 12
+                        }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#9ca3af', font: { family: 'Plus Jakarta Sans', size: 11 }, precision: 0 }
+                    }
+                }
+            }
+        });
+
         /*]]>*/
     </script>
 </body>
