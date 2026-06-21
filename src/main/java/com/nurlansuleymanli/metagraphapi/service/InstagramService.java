@@ -33,7 +33,7 @@ public class InstagramService {
                 (userId, "id,caption,timestamp,like_count,comments_count",
                 20, accessToken);
 
-        return metaResponseDto.getPosts();
+        return metaResponseDto.getData();
 
 
     }
