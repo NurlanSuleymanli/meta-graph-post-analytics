@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
@@ -18,6 +19,8 @@ import java.util.stream.Collectors;
 public class AnalysisService {
 
     public AnalysisDto analyzePosts(List<PostDto> posts) {
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
 
         posts.forEach(post ->
                 post.setEngagement(
@@ -32,12 +35,22 @@ public class AnalysisService {
 
         Map<String, Integer> likesByDay = posts.stream()
                 .collect(Collectors.groupingBy(postDto -> {
-                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ");
                             OffsetDateTime date = OffsetDateTime.parse(postDto.getTimestamp(), formatter);
                             return date.getDayOfWeek().toString();
                         },
                         Collectors.summingInt(PostDto::getLikeCount)
                 ));
+
+        Map<Integer, Integer> likesByHour = posts.stream()
+                .collect(Collectors.groupingBy(postDto -> {
+                    OffsetDateTime date = OffsetDateTime.parse(postDto.getTimestamp(), formatter);
+                    return date.getHour();
+                },
+                  Collectors.summingInt(PostDto::getLikeCount)
+                ));
+
+
+
 
         String summary = buildSummary(posts, topPosts, likesByDay);
 
